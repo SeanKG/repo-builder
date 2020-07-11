@@ -33,7 +33,7 @@ def build():
         )
         for line in r.iter_lines():
             print(line)
-            yield line.decode
+            yield line.decode() + '\n'
     return Response(stream_with_context(generate()))
 
 @app.route('/push')
