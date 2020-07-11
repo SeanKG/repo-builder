@@ -31,9 +31,16 @@ def build():
             data = open(local('repo.tar.gz'), 'rb').read(),
             stream=True
         )
+        yield 'id: start\n\n'
+        yield 'data: {"stream":"starting!"}\n\n'
+        yield 'id: work\n\n'
         for line in r.iter_lines():
             print(line)
             yield 'data: {}\n\n'.format(line.decode())
+        yield 'id: end\n\n'
+        yield 'data: {"stream":"done!"}\n\n'
+    if 'Last-Event-ID' in request.headers:
+        return '', 204
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 @app.route('/push')
