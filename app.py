@@ -4,7 +4,7 @@ import shutil
 import tarfile
 import requests_unixsocket
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, stream_with_context, request, Response
 
 requests_unixsocket.monkeypatch()
 app = Flask(__name__)
@@ -21,17 +21,20 @@ def clone():
 
 @app.route('/build')
 def build():
-    headers = {
-        'Content-Type': 'application/tar'
-    }
-    r = requests.post(
-        docker_url('build') + '?' + request.query_string.decode(),
-        headers = headers,
-        data = open(local('repo.tar.gz'), 'rb').read()
-    )
-    # print(r.headers)
-    print(r.text)
-    return r.text
+    def generate():
+        headers = {
+            'Content-Type': 'application/tar'
+        }
+        r = requests.post(
+            docker_url('build') + '?' + request.query_string.decode(),
+            headers = headers,
+            data = open(local('repo.tar.gz'), 'rb').read(),
+            stream=True
+        )
+        for line in r.iter_lines():
+            print(line)
+            yield line.decode
+    return Response(stream_with_context(generate()))
 
 @app.route('/push')
 def push():
