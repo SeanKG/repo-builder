@@ -4,25 +4,32 @@ import shutil
 import tarfile
 import requests_unixsocket
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 requests_unixsocket.monkeypatch()
 app = Flask(__name__)
 
-git_repo = 'git@github.com:SeanKG/docker-hy.github.io.git'
+git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
 
-@app.route('/')
+@app.route('/clone')
 def clone():
-    repo_dir = local( 'repo')
+    repo_dir = local('repo')
     rm(repo_dir)
     git.Repo.clone_from(git_repo, repo_dir, branch='master')
-    make_tarfile(local('repo.tar.gz'), repo_dir)
+    make_tarfile(local('repo.tar.gz'), repo_dir + '/')
     return local('')
 
-@app.route('/info')
-def info():
-    r = docker_get()
-    return r.json()
+@app.route('/build')
+def build():
+    headers = {
+        'Content-Type': 'application/tar'
+    }
+    r = requests.post(
+        docker_url('build') + '?' + request.query_string.decode(),
+        headers = headers,
+        data = open(local('repo.tar.gz'), 'rb').read()
+    )
+    return jsonify(r.json())
 
 @app.route('/docker/<path:docker_path>')
 def docker(docker_path):
@@ -30,7 +37,7 @@ def docker(docker_path):
 
 def docker_get(path='info'):
     print(path)
-    return requests.get('http+unix://%2Fvar%2Frun%2Fdocker.sock/' + path)
+    return requests.get(docker_url(path))
 
 def rm(path):
     try:
@@ -45,4 +52,5 @@ def make_tarfile(output_filename, source_dir):
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(source_dir, arcname=os.path.basename(source_dir))
 
-
+def docker_url(path):
+    return 'http+unix://%2Fvar%2Frun%2Fdocker.sock/' + path
