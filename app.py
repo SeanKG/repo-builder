@@ -29,7 +29,14 @@ def build():
         headers = headers,
         data = open(local('repo.tar.gz'), 'rb').read()
     )
-    return jsonify(r.json())
+    # print(r.headers)
+    print(r.text)
+    return r.text
+
+@app.route('/push')
+def push():
+
+    return ''
 
 @app.route('/docker/<path:docker_path>')
 def docker(docker_path):
