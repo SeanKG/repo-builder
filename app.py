@@ -4,6 +4,7 @@ import shutil
 import tarfile
 import requests_unixsocket
 import requests
+import json
 from flask import Flask, jsonify, stream_with_context, request, Response
 
 requests_unixsocket.monkeypatch()
@@ -15,6 +16,10 @@ git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
 def clone():
     _clone()
     return local('')
+
+@app.route('/docker/<path:docker_path>')
+def docker(docker_path):
+    return jsonify(docker_get(docker_path).json())
 
 @app.route('/build')
 def build():
@@ -28,29 +33,30 @@ def build():
             data = open(local('repo.tar.gz'), 'rb').read(),
             stream=True
         )
-        yield 'id: start\n\n'
-        yield 'data: {"stream":"starting!"}\n\n'
-        yield 'id: work\n\n'
+        yield _id('start')
+        yield _data({ 'stream': 'starting!'})
+        yield _id('work')
         for line in r.iter_lines():
             print(line)
-            yield 'data: {}\n\n'.format(line.decode())
-        yield 'id: end\n\n'
-        yield 'data: {"stream":"done!"}\n\n'
+            yield _data(line.decode())
+        yield _id('end')
+        yield _data({ 'stream': 'done!'})
     _clone
     if 'Last-Event-ID' in request.headers:
         return '', 204
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
-@app.route('/docker/<path:docker_path>')
-def docker(docker_path):
-    return jsonify(docker_get(docker_path).json())
+def _id(id):
+    return 'id: {}\n\n'.format(id)
+
+def _data(dat):
+    return 'data: {}\n\n'.format(json.dumps(dat) if isinstance(dat, dict) else dat)
 
 def _clone():
     repo_dir = local('repo')
     rm(repo_dir)
     git.Repo.clone_from(git_repo, repo_dir, branch='master')
     make_tarfile(local('repo.tar.gz'), repo_dir + '/')
-
 
 def docker_get(path='info'):
     print(path)
