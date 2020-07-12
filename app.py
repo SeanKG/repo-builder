@@ -13,10 +13,7 @@ git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
 
 @app.route('/clone')
 def clone():
-    repo_dir = local('repo')
-    rm(repo_dir)
-    git.Repo.clone_from(git_repo, repo_dir, branch='master')
-    make_tarfile(local('repo.tar.gz'), repo_dir + '/')
+    _clone()
     return local('')
 
 @app.route('/build')
@@ -39,18 +36,21 @@ def build():
             yield 'data: {}\n\n'.format(line.decode())
         yield 'id: end\n\n'
         yield 'data: {"stream":"done!"}\n\n'
+    _clone
     if 'Last-Event-ID' in request.headers:
         return '', 204
     return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
-@app.route('/push')
-def push():
-
-    return ''
-
 @app.route('/docker/<path:docker_path>')
 def docker(docker_path):
     return jsonify(docker_get(docker_path).json())
+
+def _clone():
+    repo_dir = local('repo')
+    rm(repo_dir)
+    git.Repo.clone_from(git_repo, repo_dir, branch='master')
+    make_tarfile(local('repo.tar.gz'), repo_dir + '/')
+
 
 def docker_get(path='info'):
     print(path)
