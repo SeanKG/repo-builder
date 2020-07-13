@@ -12,9 +12,9 @@ from flask import Flask, jsonify, stream_with_context, request, Response
 requests_unixsocket.monkeypatch()
 app = Flask(__name__)
 
-git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
+# git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
 auth_header = base64.b64encode(json.dumps(creds).encode()).decode()
-print(auth_header)
+# print(auth_header)
 
 def docker_get(path='info'):
     print(path)
@@ -50,7 +50,7 @@ def _clone():
     yield from _section('cloning')
     repo_dir = local('repo')
     rm(repo_dir)
-    git.Repo.clone_from(git_repo, repo_dir, branch='master')
+    git.Repo.clone_from(request.args['git_repo'], repo_dir, branch='master')
     yield from _section('compressing')
     make_tarfile(local('repo.tar.gz'), repo_dir + '/')
 
@@ -92,6 +92,7 @@ def work():
     yield from _build()
     yield from _tag()
     yield from _push()
+    yield from _section('DONE!')
     
 @app.route('/build')
 def build():
