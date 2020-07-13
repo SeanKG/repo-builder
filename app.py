@@ -5,20 +5,20 @@ import tarfile
 import requests_unixsocket
 import requests
 import json
+from docker_creds import creds
+import base64
 from flask import Flask, jsonify, stream_with_context, request, Response
 
 requests_unixsocket.monkeypatch()
 app = Flask(__name__)
 
 git_repo = 'https://github.com/SeanKG/docker-hy.github.io.git'
+auth_header = base64.b64encode(json.dumps(creds).encode()).decode()
+print(auth_header)
 
 def docker_get(path='info'):
     print(path)
     return requests.get(docker_url(path))
-
-# @app.route('/docker/<path:docker_path>')
-# def docker(docker_path):
-#     return jsonify(docker_get(docker_path).json())
 
 def rm(path):
     try:
@@ -70,11 +70,29 @@ def _build():
         yield _data(line.decode())
     yield _data({ 'stream': 'done!'})
 
+def _tag():
+    yield from _section('tagging')
+    name = request.args['t']
+    url = docker_url('images/{}/tag'.format(name))
+    qs = '?repo={}/{}'.format(creds['username'], name)
+    print(name)
+    print(url + qs)
+    requests.post(url + qs)
+
+def _push():
+    yield from _section('pushing')
+    name = request.args['t']
+    url = docker_url('images/{}/{}/push'.format(creds['username'], name))
+    print(url)
+    requests.post(url, headers={'X-Registry-Auth': auth_header})
+
 def work():
     yield from _section('starting!')
     yield from _clone()
     yield from _build()
-
+    yield from _tag()
+    yield from _push()
+    
 @app.route('/build')
 def build():
     if 'Last-Event-ID' in request.headers:
@@ -85,3 +103,7 @@ def build():
 def clone():
     _clone()
     return local('')
+
+@app.route('/docker/<path:docker_path>')
+def docker(docker_path):
+    return jsonify(docker_get(docker_path).json())
