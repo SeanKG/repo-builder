@@ -2,7 +2,7 @@
 
 ## What?
 
-Pulls and builds any git repo with a working docker file. Then pushes the dockerfile to a docker repo
+Pulls a git repo, then builds the Dockerfile and pushes to a docker repo
 
 #### Setup:
 
