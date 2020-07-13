@@ -95,6 +95,7 @@ def work():
 @app.route('/build')
 def build():
     if 'Last-Event-ID' in request.headers:
+        # Hacky way to close the event stream when it tries to reconnect
         return '', 204
     return Response(stream_with_context(work()), mimetype="text/event-stream")
 

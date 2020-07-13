@@ -2,7 +2,9 @@
 
 ## What?
 
-Pulls a git repo, then builds the Dockerfile and pushes to a docker repo
+Pulls a git repo, then builds the Dockerfile and pushes to a docker repo.
+
+Output of the `/build` endpoint is a proper [`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) stream that can be consumed by javascript
 
 #### Setup:
 
