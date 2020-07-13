@@ -24,7 +24,7 @@ Rename `docker_creds.example.py` to `docker_creds.py` and fill in docker repo cr
 
 `docker run -p 5000:5000 -v /var/run/docker.sock:/var/run/docker.sock pybuild`
 
-##### Usage:
+#### Usage:
 
 tag = tagname for docker repo
 
